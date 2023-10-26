@@ -6,12 +6,12 @@ default settings for HLS live streaming. Built on Alpine Linux.
 * nginx-rtmp-module 1.2.2 (compiled from source)
 * ffmpeg 6.0 (compiled from source)
 * Default HLS settings (See: [nginx.conf](nginx.conf))
-
+<!--
 [![Docker Stars](https://img.shields.io/docker/stars/alfg/nginx-rtmp.svg)](https://hub.docker.com/r/alfg/nginx-rtmp/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/alfg/nginx-rtmp.svg)](https://hub.docker.com/r/alfg/nginx-rtmp/)
 [![Docker Automated build](https://img.shields.io/docker/automated/alfg/nginx-rtmp.svg)](https://hub.docker.com/r/alfg/nginx-rtmp/builds/)
 [![Build Status](https://travis-ci.org/alfg/docker-nginx-rtmp.svg?branch=master)](https://travis-ci.org/alfg/docker-nginx-rtmp)
-
+-->
 ## Usage
 
 ### Server
