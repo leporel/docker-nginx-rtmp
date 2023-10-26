@@ -2,9 +2,9 @@
 A Dockerfile installing NGINX, nginx-rtmp-module and FFmpeg from source with
 default settings for HLS live streaming. Built on Alpine Linux.
 
-* Nginx 1.23.1 (Mainline version compiled from source)
+* Nginx 1.23.2 (Mainline version compiled from source)
 * nginx-rtmp-module 1.2.2 (compiled from source)
-* ffmpeg 5.1 (compiled from source)
+* ffmpeg 6.0 (compiled from source)
 * Default HLS settings (See: [nginx.conf](nginx.conf))
 
 [![Docker Stars](https://img.shields.io/docker/stars/alfg/nginx-rtmp.svg)](https://hub.docker.com/r/alfg/nginx-rtmp/)
@@ -79,42 +79,44 @@ http://localhost:8080/live/$STREAM_NAME.m3u8
 ```
 $ ffmpeg -buildconf
 
-ffmpeg version 4.4 Copyright (c) 2000-2021 the FFmpeg developers
-  built with gcc 10.2.1 (Alpine 10.2.1_pre1) 20201203
-  configuration: --prefix=/usr/local --enable-version3 --enable-gpl --enable-nonfree --enable-small --enable-libmp3lame --enable-libx264 --enable-libx265 --enable-libvpx --enable-libtheora --enable-libvorbis --enable-libopus --enable-libfdk-aac --enable-libass --enable-libwebp --enable-postproc --enable-avresample --enable-libfreetype --enable-openssl --disable-debug --disable-doc --disable-ffplay --extra-libs='-lpthread -lm'
-  libavutil      56. 70.100 / 56. 70.100
-  libavcodec     58.134.100 / 58.134.100
-  libavformat    58. 76.100 / 58. 76.100
-  libavdevice    58. 13.100 / 58. 13.100
-  libavfilter     7.110.100 /  7.110.100
-  libavresample   4.  0.  0 /  4.  0.  0
-  libswscale      5.  9.100 /  5.  9.100
-  libswresample   3.  9.100 /  3.  9.100
-  libpostproc    55.  9.100 / 55.  9.100
+ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers
+  built with gcc 11 (Ubuntu 11.4.0-1ubuntu1~22.04)
+  configuration: --pkg-config-flags=--static --prefix=/usr/local --enable-version3 --enable-gpl --enable-nonfree --enable-libfdk-aac --enable-openssl --enable-libnpp --enable-cuda --enable-ffnvcodec --enable-cuda-llvm --enable-libx264 --enable-libx265 --enable-libaom --enable-libdav1d --enable-libvpx --enable-libopus --enable-cuvid --enable-nvenc --enable-libnpp --disable-debug --disable-doc --disable-ffplay --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64 --extra-libs='-lpthread -lm'
+  libavutil      58.  2.100 / 58.  2.100
+  libavcodec     60.  3.100 / 60.  3.100
+  libavformat    60.  3.100 / 60.  3.100
+  libavdevice    60.  1.100 / 60.  1.100
+  libavfilter     9.  3.100 /  9.  3.100
+  libswscale      7.  1.100 /  7.  1.100
+  libswresample   4. 10.100 /  4. 10.100
+  libpostproc    57.  1.100 / 57.  1.100
 
   configuration:
+    --pkg-config-flags=--static
     --prefix=/usr/local
     --enable-version3
     --enable-gpl
     --enable-nonfree
-    --enable-small
-    --enable-libmp3lame
+    --enable-libfdk-aac
+    --enable-openssl
+    --enable-libnpp
+    --enable-cuda
+    --enable-ffnvcodec
+    --enable-cuda-llvm
     --enable-libx264
     --enable-libx265
+    --enable-libaom
+    --enable-libdav1d
     --enable-libvpx
-    --enable-libtheora
-    --enable-libvorbis
     --enable-libopus
-    --enable-libfdk-aac
-    --enable-libass
-    --enable-libwebp
-    --enable-postproc
-    --enable-avresample
-    --enable-libfreetype
-    --enable-openssl
+    --enable-cuvid
+    --enable-nvenc
+    --enable-libnpp
     --disable-debug
     --disable-doc
     --disable-ffplay
+    --extra-cflags=-I/usr/local/cuda/include
+    --extra-ldflags=-L/usr/local/cuda/lib64
     --extra-libs='-lpthread -lm'
 ```
 
