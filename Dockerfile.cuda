@@ -1,6 +1,6 @@
-ARG NGINX_VERSION=1.23.1
+ARG NGINX_VERSION=1.23.2
 ARG NGINX_RTMP_VERSION=1.2.2
-ARG FFMPEG_VERSION=5.1
+ARG FFMPEG_VERSION=6.0
 
 ##############################
 # Build the NGINX-build image.
@@ -58,7 +58,7 @@ RUN \
 
 ###############################
 # Build the FFmpeg-build image.
-FROM nvidia/cuda:11.7.0-devel-ubuntu20.04 as build-ffmpeg
+FROM nvidia/cuda:12.2.2-devel-ubuntu22.04 as build-ffmpeg
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG FFMPEG_VERSION
@@ -70,6 +70,7 @@ RUN apt update && apt install -y --no-install-recommends \
   build-essential \
   coreutils \
   cmake \
+  clang \
   libx264-dev \
   libx265-dev \
   libc6 \
@@ -85,11 +86,28 @@ RUN apt update && apt install -y --no-install-recommends \
   libopus-dev \
   librtmp-dev \
   libvpx-dev \
-  libvorbis-dev \
   libwebp-dev \
   libtheora-dev \
   libtool \
   libssl-dev \
+  libfdk-aac-dev \
+  libaom-dev \
+  libdav1d-dev \
+  libunistring-dev \
+  libass-dev \
+  libfreetype6-dev \
+  libgnutls28-dev \
+  libmp3lame-dev \
+  libsdl2-dev \
+  libtool \
+  libva-dev \
+  libvdpau-dev \
+  libvorbis-dev \
+  libxcb1-dev \
+  libxcb-shm0-dev \
+  libxcb-xfixes0-dev \
+  libffmpeg-nvenc-dev \
+  zlib1g-dev \
   pkg-config \
   wget \
   yasm \
@@ -99,10 +117,24 @@ RUN apt update && apt install -y --no-install-recommends \
 
 WORKDIR /tmp
 
+RUN \
+  git clone --depth=1 https://gitlab.com/AOMediaCodec/SVT-AV1.git && \
+  cd SVT-AV1 && \
+  sed -i 's/picture_copy(/svt_av1_picture_copy(/g' \
+    Source/Lib/Common/Codec/EbPictureOperators.c \
+    Source/Lib/Common/Codec/EbPictureOperators.h \
+    Source/Lib/Encoder/Codec/EbFullLoop.c \
+    Source/Lib/Encoder/Codec/EbProductCodingLoop.c && \
+  cd Build && \
+  cmake .. -G"Unix Makefiles" -DCMAKE_INSTALL_LIBDIR=lib -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release && \
+  make -j$(nproc) install
+
+
 # Clone and install ffnvcodec
 RUN git clone https://git.videolan.org/git/ffmpeg/nv-codec-headers.git && \
   cd nv-codec-headers && \
-  make install
+  git checkout origin/sdk/12.0 && \
+  make && make install
 
 # Get FFmpeg source.
 RUN wget http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz && \
@@ -111,17 +143,26 @@ RUN wget http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz && \
 
 # Compile ffmpeg.
 WORKDIR /tmp/ffmpeg-${FFMPEG_VERSION}
+
 RUN \
-  ./configure \
+  sed -i 's/add_ldexeflags -fPIE -pie/add_ldexeflags -fPIE -static-pie/' configure && ./configure \
+  --pkg-config-flags=--static \
   --prefix=${PREFIX} \
   --enable-version3 \
   --enable-gpl \
   --enable-nonfree \
-  --enable-small \
   --enable-libfdk-aac \
   --enable-openssl \
   --enable-libnpp \
   --enable-cuda \
+  --enable-ffnvcodec \
+  --enable-cuda-llvm \
+  --enable-libx264 \
+  --enable-libx265 \
+  --enable-libaom \
+  --enable-libdav1d \
+  --enable-libvpx \
+  --enable-libopus \
   --enable-cuvid \
   --enable-nvenc \
   --enable-libnpp \
@@ -134,17 +175,18 @@ RUN \
   make && \
   make install && \
   make distclean
+  
+RUN ldd /usr/local/bin/ffmpeg | awk '{if (match($3, /^\//)) print $3}' | xargs -I '{}' cp -v '{}' /usr/local/lib/
 
 # Cleanup.
 RUN rm -rf /var/cache/* /tmp/*
 
 ##########################
 # Build the release image.
-FROM nvidia/cuda:11.7.0-devel-ubuntu20.04
-LABEL MAINTAINER Alfred Gutierrez <alf.g.jr@gmail.com>
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV NVIDIA_DRIVER_VERSION=455
+ENV NVIDIA_DRIVER_VERSION=535
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,video,utility
 
@@ -167,13 +209,25 @@ RUN apt update && apt install -y --no-install-recommends \
   libnvidia-encode-${NVIDIA_DRIVER_VERSION} \
   libtheora0 \
   openssl \
-  rtmpdump && \
-  rm -rf /var/lib/apt/lists/*
+  rtmpdump
+  
+RUN apt install -y --no-install-recommends ffmpeg
+
+RUN echo "**** Section cleanup ****" \
+        && apt-get clean autoclean -y \
+        && apt-get autoremove -y \
+        && rm -rf \
+            /var/lib/apt/lists/* \
+            /var/tmp/* \
+            /tmp/* 
 
 COPY --from=build-nginx /usr/local/nginx /usr/local/nginx
 COPY --from=build-nginx /etc/nginx /etc/nginx
-COPY --from=build-ffmpeg /usr/local /usr/local
-COPY --from=build-ffmpeg /usr/lib/x86_64-linux-gnu/libfdk-aac.so.1 /usr/lib/x86_64-linux-gnu/libfdk-aac.so.1
+COPY --from=build-ffmpeg /usr/local/bin /usr/local/bin
+COPY --from=build-ffmpeg /usr/local/lib /usr/local/lib
+COPY --from=build-ffmpeg /usr/lib/x86_64-linux-gnu/libfdk-aac.so.2 /usr/lib/x86_64-linux-gnu/libfdk-aac.so.2
+
+ENV LD_LIBRARY_PATH "${LD_LIBRARY_PATH}:/usr/local/lib/"
 
 # Add NGINX path, config and static files.
 ENV PATH "${PATH}:/usr/local/nginx/sbin"
