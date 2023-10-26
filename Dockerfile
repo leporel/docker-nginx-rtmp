@@ -1,10 +1,10 @@
-ARG NGINX_VERSION=1.23.1
+ARG NGINX_VERSION=1.23.2
 ARG NGINX_RTMP_VERSION=1.2.2
-ARG FFMPEG_VERSION=5.1
+ARG FFMPEG_VERSION=6.0
 
 ##############################
 # Build the NGINX-build image.
-FROM alpine:3.16.1 as build-nginx
+FROM alpine:3.18.4 as build-nginx
 ARG NGINX_VERSION
 ARG NGINX_RTMP_VERSION
 ARG MAKEFLAGS="-j4"
@@ -58,7 +58,7 @@ RUN \
 
 ###############################
 # Build the FFmpeg-build image.
-FROM alpine:3.16.1 as build-ffmpeg
+FROM alpine:3.18.4 as build-ffmpeg
 ARG FFMPEG_VERSION
 ARG PREFIX=/usr/local
 ARG MAKEFLAGS="-j4"
@@ -66,6 +66,9 @@ ARG MAKEFLAGS="-j4"
 # FFmpeg build dependencies.
 RUN apk add --no-cache \
   build-base \
+  clang \
+  cmake \
+  git \
   coreutils \
   freetype-dev \
   lame-dev \
@@ -84,12 +87,26 @@ RUN apk add --no-cache \
   wget \
   x264-dev \
   x265-dev \
+  aom-dev \
+  dav1d-dev \
   yasm
 
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/community >> /etc/apk/repositories
 RUN apk add --no-cache fdk-aac-dev
 
 WORKDIR /tmp
+
+RUN \
+  git clone --depth=1 https://gitlab.com/AOMediaCodec/SVT-AV1.git && \
+  cd SVT-AV1 && \
+  sed -i 's/picture_copy(/svt_av1_picture_copy(/g' \
+    Source/Lib/Common/Codec/EbPictureOperators.c \
+    Source/Lib/Common/Codec/EbPictureOperators.h \
+    Source/Lib/Encoder/Codec/EbFullLoop.c \
+    Source/Lib/Encoder/Codec/EbProductCodingLoop.c && \
+  cd Build && \
+  cmake .. -G"Unix Makefiles" -DCMAKE_INSTALL_LIBDIR=lib -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release && \
+  make -j$(nproc) install
 
 # Get FFmpeg source.
 RUN wget http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz && \
@@ -104,10 +121,12 @@ RUN \
   --enable-version3 \
   --enable-gpl \
   --enable-nonfree \
-  --enable-small \
   --enable-libmp3lame \
   --enable-libx264 \
   --enable-libx265 \
+  --enable-libsvtav1 \
+  --enable-libaom \
+  --enable-libdav1d \
   --enable-libvpx \
   --enable-libtheora \
   --enable-libvorbis \
@@ -131,8 +150,7 @@ RUN rm -rf /var/cache/* /tmp/*
 
 ##########################
 # Build the release image.
-FROM alpine:3.16.1
-LABEL MAINTAINER Alfred Gutierrez <alf.g.jr@gmail.com>
+FROM alpine:3.18.4
 
 # Set default ports.
 ENV HTTP_PORT 80
@@ -144,18 +162,26 @@ RUN apk add --no-cache \
   gettext \
   openssl \
   pcre \
-  lame \
-  libogg \
-  curl \
+  freetype-dev \
+  lame-dev \
+  libogg-dev \
   libass \
-  libvpx \
-  libvorbis \
-  libwebp \
-  libtheora \
-  opus \
+  libass-dev \
+  libvpx-dev \
+  libvorbis-dev \
+  libwebp-dev \
+  libtheora-dev \
+  libogg \
+  opus-dev \
+  curl \
   rtmpdump \
   x264-dev \
-  x265-dev
+  x265-dev \
+  aom-dev \
+  dav1d-dev
+
+
+RUN rm -rf /var/cache/apk/*
 
 COPY --from=build-nginx /usr/local/nginx /usr/local/nginx
 COPY --from=build-nginx /etc/nginx /etc/nginx
