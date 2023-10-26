@@ -107,6 +107,7 @@ ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers
     --enable-libx265
     --enable-libaom
     --enable-libdav1d
+    --enable-libsvtav1
     --enable-libvpx
     --enable-libopus
     --enable-cuvid
