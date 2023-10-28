@@ -4,7 +4,7 @@ default settings for HLS live streaming. Built on Alpine Linux (Ubuntu for cuda)
 
 * Nginx 1.23.2 (Mainline version compiled from source)
 * nginx-rtmp-module 1.2.2 (compiled from source)
-* ffmpeg 6.0 (compiled from source + support  flv rtmp h265/hevc/av1 via [path](https://github.com/veovera/enhanced-rtmp))
+* ffmpeg 6.0 (compiled from source + support  flv rtmp h265/hevc/av1 via [path](https://github.com/runner365/ffmpeg_rtmp_h265))
 * Default HLS settings (See: [nginx.conf](nginx.conf))
 
 ## Usage
@@ -83,7 +83,7 @@ rtmp {
 					meta copy;
 					
 				    live on; # Allows live input
-                    drop_idle_publisher 15s; 
+				    drop_idle_publisher 15s; 
 					
 					exec_push  /usr/local/bin/ffmpeg -i rtmp://localhost:1935/$app/$name 
 					 -c:v libx264 -preset medium -b:v 6000k -maxrate 6000k -bufsize 12000k
@@ -93,7 +93,7 @@ rtmp {
 					 -f flv rtmp://localhost:1935/restream/$name;
 				}
 
-        	    application restream {
+				application restream {
 					allow publish 127.0.0.1;
 					allow publish 192.168.1.0/24;
 					deny publish all;
@@ -133,7 +133,7 @@ rtmp {
 					meta copy;
 					
 				    live on; # Allows live input
-                    drop_idle_publisher 15s; 
+				    drop_idle_publisher 15s; 
 
 					exec_push  /usr/local/bin/ffmpeg -i rtmp://localhost:1935/$app/$name 
 					 -c:v libx265 -preset fast
