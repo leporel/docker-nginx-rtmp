@@ -38,7 +38,7 @@ I recommend using [Certbot](https://certbot.eff.org/docs/install.html) from [Let
 If you wish to use your own `nginx.conf`, mount it as a volume in your `docker-compose` or `docker` command as `nginx.conf.template`:
 ```yaml
 volumes:
-  - ./nginx.conf:/etc/nginx/nginx.conf.template
+  - ./nginx.conf:/etc/nginx/nginx.conf
 ```
 
 ### OBS Configuration
