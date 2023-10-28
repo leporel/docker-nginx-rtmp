@@ -64,7 +64,7 @@ ARG PREFIX=/usr/local
 ARG MAKEFLAGS="-j4"
 
 # FFmpeg build dependencies.
-RUN apk add --no-cache \
+RUN apk update && apk add --no-cache \
   build-base \
   clang \
   cmake \
@@ -113,6 +113,12 @@ RUN wget http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz && \
   tar zxf ffmpeg-${FFMPEG_VERSION}.tar.gz && \
   rm ffmpeg-${FFMPEG_VERSION}.tar.gz
 
+# Get FFmpeg flv h265/av1 support.
+RUN git clone --depth=1 https://github.com/runner365/ffmpeg_rtmp_h265 && \
+  cp ./ffmpeg_rtmp_h265/flv.h /tmp/ffmpeg-${FFMPEG_VERSION}/libavformat/ && \
+  cp ./ffmpeg_rtmp_h265/flvdec.c /tmp/ffmpeg-${FFMPEG_VERSION}/libavformat/ && \
+  cp ./ffmpeg_rtmp_h265/flvenc.c /tmp/ffmpeg-${FFMPEG_VERSION}/libavformat/
+
 # Compile ffmpeg.
 WORKDIR /tmp/ffmpeg-${FFMPEG_VERSION}
 RUN \
@@ -157,7 +163,7 @@ ENV HTTP_PORT 80
 ENV HTTPS_PORT 443
 ENV RTMP_PORT 1935
 
-RUN apk add --no-cache \
+RUN apk update && apk add --no-cache \
   ca-certificates \
   gettext \
   openssl \
@@ -190,13 +196,15 @@ COPY --from=build-ffmpeg /usr/lib/libfdk-aac.so.2 /usr/lib/libfdk-aac.so.2
 
 # Add NGINX path, config and static files.
 ENV PATH "${PATH}:/usr/local/nginx/sbin"
-COPY nginx.conf /etc/nginx/nginx.conf.template
+COPY nginx.conf /etc/nginx/nginx.conf
 RUN mkdir -p /opt/data && mkdir /www
 COPY static /www/static
+
+RUN mkdir -p /var/log/nginx/ && \
+	ln -sf /dev/stdout /var/log/nginx/access.log && \
+    ln -sf /dev/stderr /var/log/nginx/error.log
 
 EXPOSE 1935
 EXPOSE 80
 
-CMD envsubst "$(env | sed -e 's/=.*//' -e 's/^/\$/g')" < \
-  /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && \
-  nginx
+CMD ["nginx"]
