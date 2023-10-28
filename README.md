@@ -4,7 +4,7 @@ default settings for HLS live streaming. Built on Alpine Linux (Ubuntu for cuda)
 
 * Nginx 1.23.2 (Mainline version compiled from source)
 * nginx-rtmp-module 1.2.2 (compiled from source)
-* ffmpeg 6.0 (compiled from source + support  flv rtmp h265/hevc/av1 via [path](https://github.com/runner365/ffmpeg_rtmp_h265))
+* ffmpeg 6.0 (compiled from source + support  flv rtmp h265/hevc/av1 via [patch](https://github.com/runner365/ffmpeg_rtmp_h265))
 * Default HLS settings (See: [nginx.conf](nginx.conf))
 
 ## Usage
@@ -150,7 +150,7 @@ rtmp {
 }
 ```
 
-it seems the tee muxer don't work with runner365/ffmpeg_rtmp_h265 path, so i found working solution with `ffmpeg -listen 1`
+it seems the tee muxer don't work with runner365/ffmpeg_rtmp_h265 patch, so i found working solution with `ffmpeg -listen 1`
 
 
 ### FFmpeg Build
