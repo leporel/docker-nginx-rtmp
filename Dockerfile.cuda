@@ -171,6 +171,7 @@ RUN \
   --enable-libvpx \
   --enable-libopus \
   --enable-cuvid \
+  --enable-nvdec \
   --enable-nvenc \
   --enable-libnpp \
   --disable-debug \
