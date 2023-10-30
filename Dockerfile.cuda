@@ -171,6 +171,7 @@ RUN \
   --enable-libvpx \
   --enable-libopus \
   --enable-cuvid \
+  --enable-cuda-nvcc \
   --enable-nvdec \
   --enable-nvenc \
   --enable-libnpp \
