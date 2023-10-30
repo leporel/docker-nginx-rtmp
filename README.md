@@ -159,7 +159,7 @@ $ ffmpeg -buildconf
 
 ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers
   built with gcc 11 (Ubuntu 11.4.0-1ubuntu1~22.04)
-  configuration: --pkg-config-flags=--static --prefix=/usr/local --enable-version3 --enable-gpl --enable-nonfree --enable-libfdk-aac --enable-openssl --enable-libnpp --enable-cuda --enable-ffnvcodec --enable-cuda-llvm --enable-libx264 --enable-libx265 --enable-libaom --enable-libdav1d --enable-libvpx --enable-libopus --enable-cuvid --enable-nvenc --enable-libnpp --disable-debug --disable-doc --disable-ffplay --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64 --extra-libs='-lpthread -lm'
+  configuration: --pkg-config-flags=--static --prefix=/usr/local --enable-version3 --enable-gpl --enable-nonfree --enable-libfdk-aac --enable-openssl --enable-libnpp --enable-cuda --enable-ffnvcodec --enable-cuda-llvm --enable-libx264 --enable-libx265 --enable-libaom --enable-libdav1d --enable-libsvtav1 --enable-libvpx --enable-libopus --enable-cuvid --enable-cuda-nvcc --enable-nvdec --enable-nvenc --enable-libnpp --disable-debug --disable-doc --disable-ffplay --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64 --extra-libs='-lpthread -lm'
   libavutil      58.  2.100 / 58.  2.100
   libavcodec     60.  3.100 / 60.  3.100
   libavformat    60.  3.100 / 60.  3.100
@@ -189,6 +189,8 @@ ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers
     --enable-libvpx
     --enable-libopus
     --enable-cuvid
+    --enable-cuda-nvcc
+    --enable-nvdec
     --enable-nvenc
     --enable-libnpp
     --disable-debug
