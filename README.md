@@ -4,7 +4,7 @@ default settings for HLS live streaming. Built on Alpine Linux (Ubuntu for cuda)
 
 * Nginx 1.23.2 (Mainline version compiled from source)
 * nginx-rtmp-module 1.2.2 (compiled from source)
-* ffmpeg 6.0 (compiled from source + support  flv rtmp h265/hevc/av1 via [patch](https://github.com/runner365/ffmpeg_rtmp_h265))
+* ffmpeg 6.1 (compiled from source, support HEVC,VP9,AV1 codec in enhanced flv format & rtmp protocol)
 * Default HLS settings (See: [nginx.conf](nginx.conf))
 
 ## Usage
@@ -113,8 +113,6 @@ rtmp {
 
 #### h265
 
-> if you want push rtmp h265/av1 stream - add `-f flv -flvflags ext_header`
-
 example nginx.conf
 ```nginx
 rtmp {
@@ -143,61 +141,65 @@ rtmp {
 					 -f flv rtmp://localhost:1936/restream/$name;
 					
 					exec_push  /usr/local/bin/ffmpeg -listen 1 -i rtmp://localhost:1936/restream/$name 
-						-c copy -f flv -flvflags ext_header rtmp://a.rtmp.youtube.com/live2/my_stream_key
-						-c copy -f flv -flvflags ext_header rtmp://a.rtmp.youtube.com/live2/my_stream_key;
+						-c copy -f flv rtmp://a.rtmp.youtube.com/live2/my_stream_key
+						-c copy -f flv rtmp://a.rtmp.youtube.com/live2/my_stream_key2;
 				}	
 		}
 }
 ```
 
-it seems the tee muxer don't work with runner365/ffmpeg_rtmp_h265 patch, so i found working solution with `ffmpeg -listen 1`
+or you can use tee muxer, but i didn't tested it  
+```
+					exec_push  /usr/local/bin/ffmpeg -i rtmp://localhost:1935/$app/$name 
+					 -c:v libx265 -preset fast
+					 -r 60 -profile:v main -level 5.1 
+					 -x265-params bitrate=4500:vbv-maxrate=4500:vbv-bufsize=9000:strict-cbr:bframes=2:keyint=120:scenecut=0
+					 -c:a aac -b:a 192k
+					 -map 0 -f tee '[f=flv:onfail=ignore]rtmp://a.rtmp.youtube.com/live2/my_stream_key|[f=flv:onfail=ignore]rtmp://a.rtmp.youtube.com/live2/my_stream_key2;
+
+``` 
 
 
 ### FFmpeg Build
 ```
 $ ffmpeg -buildconf
 
-ffmpeg version 6.0 Copyright (c) 2000-2023 the FFmpeg developers
-  built with gcc 11 (Ubuntu 11.4.0-1ubuntu1~22.04)
-  configuration: --pkg-config-flags=--static --prefix=/usr/local --enable-version3 --enable-gpl --enable-nonfree --enable-libfdk-aac --enable-openssl --enable-libnpp --enable-cuda --enable-ffnvcodec --enable-cuda-llvm --enable-libx264 --enable-libx265 --enable-libaom --enable-libdav1d --enable-libsvtav1 --enable-libvpx --enable-libopus --enable-cuvid --enable-cuda-nvcc --enable-nvdec --enable-nvenc --enable-libnpp --disable-debug --disable-doc --disable-ffplay --extra-cflags=-I/usr/local/cuda/include --extra-ldflags=-L/usr/local/cuda/lib64 --extra-libs='-lpthread -lm'
-  libavutil      58.  2.100 / 58.  2.100
-  libavcodec     60.  3.100 / 60.  3.100
-  libavformat    60.  3.100 / 60.  3.100
-  libavdevice    60.  1.100 / 60.  1.100
-  libavfilter     9.  3.100 /  9.  3.100
-  libswscale      7.  1.100 /  7.  1.100
-  libswresample   4. 10.100 /  4. 10.100
-  libpostproc    57.  1.100 / 57.  1.100
+ffmpeg version 6.1 Copyright (c) 2000-2023 the FFmpeg developers
+  built with gcc 12.2.1 (Alpine 12.2.1_git20220924-r10) 20220924
+  configuration: --prefix=/usr/local --enable-version3 --enable-gpl --enable-nonfree --enable-libmp3lame --enable-libx264 --enable-libx265 --enable-libsvtav1 --enable-libaom --enable-libdav1d --enable-libvpx --enable-libtheora --enable-libvorbis --enable-libopus --enable-libfdk-aac --enable-libass --enable-libwebp --enable-postproc --enable-libfreetype --enable-openssl --disable-debug --disable-doc --disable-ffplay --extra-libs='-lpthread -lm'
+  libavutil      58. 29.100 / 58. 29.100
+  libavcodec     60. 31.102 / 60. 31.102
+  libavformat    60. 16.100 / 60. 16.100
+  libavdevice    60.  3.100 / 60.  3.100
+  libavfilter     9. 12.100 /  9. 12.100
+  libswscale      7.  5.100 /  7.  5.100
+  libswresample   4. 12.100 /  4. 12.100
+  libpostproc    57.  3.100 / 57.  3.100
 
   configuration:
-    --pkg-config-flags=--static
     --prefix=/usr/local
     --enable-version3
     --enable-gpl
     --enable-nonfree
-    --enable-libfdk-aac
-    --enable-openssl
-    --enable-libnpp
-    --enable-cuda
-    --enable-ffnvcodec
-    --enable-cuda-llvm
+    --enable-libmp3lame
     --enable-libx264
     --enable-libx265
+    --enable-libsvtav1
     --enable-libaom
     --enable-libdav1d
-    --enable-libsvtav1
     --enable-libvpx
+    --enable-libtheora
+    --enable-libvorbis
     --enable-libopus
-    --enable-cuvid
-    --enable-cuda-nvcc
-    --enable-nvdec
-    --enable-nvenc
-    --enable-libnpp
+    --enable-libfdk-aac
+    --enable-libass
+    --enable-libwebp
+    --enable-postproc
+    --enable-libfreetype
+    --enable-openssl
     --disable-debug
     --disable-doc
     --disable-ffplay
-    --extra-cflags=-I/usr/local/cuda/include
-    --extra-ldflags=-L/usr/local/cuda/lib64
     --extra-libs='-lpthread -lm'
 ```
 
